@@ -56,6 +56,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 /**
  * @author E.Santoboni
@@ -63,6 +64,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 @Configuration
 @ComponentScan
 @EnableCaching
+@EnableRedisHttpSession
 public class CacheConfig extends CachingConfigurerSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
@@ -98,7 +100,7 @@ public class CacheConfig extends CachingConfigurerSupport {
     }
 
     @Bean
-    public LettuceConnectionFactory redisConnectionFactory() {
+    public LettuceConnectionFactory connectionFactory() {
         if (!this.active) {
             return new LettuceConnectionFactory();
         }
@@ -151,8 +153,6 @@ public class CacheConfig extends CachingConfigurerSupport {
         RedisCacheConfiguration redisCacheConfiguration = this.buildDefaultConfiguration();
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         // time to leave = 4 Hours
-        
-        
         List<String> tenantCodes = tenantManager.getCodes();
         cacheConfigurations.put(ICacheInfoManager.DEFAULT_CACHE_NAME, createCacheConfiguration(4L * 60 * 60));
         tenantCodes.stream().forEach(c -> {
