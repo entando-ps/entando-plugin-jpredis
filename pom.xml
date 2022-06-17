@@ -9,7 +9,7 @@
     </parent>
     <artifactId>entando-plugin-jpredis</artifactId>
     <groupId>org.entando.entando.plugins</groupId>
-    <version>7.1.0-SNAPSHOT</version>
+    <version>7.1.0-PS-SNAPSHOT</version>
     <packaging>war</packaging>
     <name>Entando Plugin: Redis Connector</name>
     <description>Enables the use of Redis as system library</description>
@@ -231,7 +231,7 @@
             <dependency>
                 <groupId>org.entando</groupId>
                 <artifactId>entando-core-bom</artifactId>
-                <version>${entando-core-bom.version}</version>
+                <version>7.1.0-PS-SNAPSHOT</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
