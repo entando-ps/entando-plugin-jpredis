@@ -45,12 +45,6 @@
                       p:name="Entando_ApiCatalogManager" p:store-ref="apiCatalogCache" />
         <bean class="org.entando.entando.aps.system.services.cache.CustomConcurrentMapCacheFactoryBean"
                       p:name="Entando_KeyGeneratorManager" p:store-ref="keyGeneratorCache" />
-        <bean class="org.entando.entando.aps.system.services.cache.CustomConcurrentMapCacheFactoryBean"
-                      p:name="Entando_DataObjectManager" p:store-ref="dataObjectCache" />
-        <bean class="org.entando.entando.aps.system.services.cache.CustomConcurrentMapCacheFactoryBean"
-                      p:name="Entando_DataObjectModelManager" p:store-ref="dataObjectModelCache" />
-        <bean class="org.entando.entando.aps.system.services.cache.CustomConcurrentMapCacheFactoryBean"
-                      p:name="Entando_DataObjectPageMapperManager" p:store-ref="dataObjectMapperCache" />
     </util:set>
     
 </beans>
