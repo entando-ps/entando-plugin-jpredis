@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.entando.entando.aps.system.services.cache.ExternalCachesContainer;
 import org.entando.entando.aps.system.services.cache.ICacheInfoManager;
+import org.entando.entando.aps.system.services.tenant.ITenantManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -136,7 +137,9 @@ public class CacheConfig extends CachingConfigurerSupport {
 
     @Primary
     @Bean
-    public CacheManager cacheManager(@Autowired(required = false) RedisClient lettuceClient, RedisConnectionFactory redisConnectionFactory) {
+    public CacheManager cacheManager(@Autowired(required = false) RedisClient lettuceClient, 
+            @Autowired(required = true) ITenantManager tenantManager, 
+            RedisConnectionFactory redisConnectionFactory) {
         if (!this.active) {
             logger.warn("** Redis not active **");
             DefaultEntandoCacheManager defaultCacheManager = new DefaultEntandoCacheManager();
@@ -148,7 +151,14 @@ public class CacheConfig extends CachingConfigurerSupport {
         RedisCacheConfiguration redisCacheConfiguration = this.buildDefaultConfiguration();
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         // time to leave = 4 Hours
+        
+        
+        List<String> tenantCodes = tenantManager.getCodes();
         cacheConfigurations.put(ICacheInfoManager.DEFAULT_CACHE_NAME, createCacheConfiguration(4L * 60 * 60));
+        tenantCodes.stream().forEach(c -> {
+            cacheConfigurations.put(c + "_" + ICacheInfoManager.DEFAULT_CACHE_NAME, createCacheConfiguration(4L * 60 * 60));
+        });
+        
         CacheFrontend<String, Object> cacheFrontend = this.buildCacheFrontend(lettuceClient);
         LettuceCacheManager manager = LettuceCacheManager
                 .builder(redisConnectionFactory)
