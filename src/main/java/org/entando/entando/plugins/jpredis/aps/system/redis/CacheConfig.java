@@ -14,6 +14,7 @@
 package org.entando.entando.plugins.jpredis.aps.system.redis;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -25,6 +26,7 @@ import io.lettuce.core.support.caching.CacheFrontend;
 import io.lettuce.core.support.caching.ClientSideCaching;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.entando.entando.aps.system.services.cache.ExternalCachesContainer;
 import org.entando.entando.aps.system.services.cache.ICacheInfoManager;
 import org.entando.entando.aps.system.services.tenant.ITenantManager;
+import org.entando.entando.aps.system.services.tenant.TenantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,11 +88,17 @@ public class CacheConfig extends CachingConfigurerSupport {
 
     @Value("${REDIS_PASSWORD:}")
     private String redisPassword;
-    
+
+    @Value("${ENTANDO_TENANTS:}")
+    private String tenantsConfig;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Autowired
     @Qualifier(value = "entandoDefaultCaches")
     private Collection<Cache> defaultCaches;
-    
+
     @Autowired(required = false)
     private List<ExternalCachesContainer> defaultExternalCachesContainers;
 
@@ -140,7 +149,6 @@ public class CacheConfig extends CachingConfigurerSupport {
     @Primary
     @Bean
     public CacheManager cacheManager(@Autowired(required = false) RedisClient lettuceClient, 
-            @Autowired(required = true) ITenantManager tenantManager, 
             RedisConnectionFactory redisConnectionFactory) {
         if (!this.active) {
             logger.warn("** Redis not active **");
@@ -153,12 +161,19 @@ public class CacheConfig extends CachingConfigurerSupport {
         RedisCacheConfiguration redisCacheConfiguration = this.buildDefaultConfiguration();
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         // time to leave = 4 Hours
-        List<String> tenantCodes = tenantManager.getCodes();
         cacheConfigurations.put(ICacheInfoManager.DEFAULT_CACHE_NAME, createCacheConfiguration(4L * 60 * 60));
-        tenantCodes.stream().forEach(c -> {
-            cacheConfigurations.put(c + "_" + ICacheInfoManager.DEFAULT_CACHE_NAME, createCacheConfiguration(4L * 60 * 60));
-        });
-        
+        try {
+            if (!StringUtils.isBlank(this.tenantsConfig)) {
+                TenantConfig[] configArray = this.objectMapper.readValue(this.tenantsConfig, new TypeReference<TenantConfig[]>(){});
+                List<TenantConfig> list = Arrays.asList(configArray);
+                list.stream().forEach(t -> {
+                    cacheConfigurations.put(t.getTenantCode() + "_" + ICacheInfoManager.DEFAULT_CACHE_NAME, createCacheConfiguration(4L * 60 * 60));
+                });
+            }
+        } catch (Exception e) {
+            logger.error("Error reading tenants config", e);
+        }
+
         CacheFrontend<String, Object> cacheFrontend = this.buildCacheFrontend(lettuceClient);
         LettuceCacheManager manager = LettuceCacheManager
                 .builder(redisConnectionFactory)
@@ -218,7 +233,7 @@ public class CacheConfig extends CachingConfigurerSupport {
         CacheFrontend<String, Object> cacheFrontend = ClientSideCaching.enable(CacheAccessor.forMap(clientCache), myself, trackingArgs);
         return cacheFrontend;
     }
-    
+
     private RedisCacheConfiguration buildDefaultConfiguration() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ZERO);
         ObjectMapper mapper = new Jackson2ObjectMapperBuilder()
