@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.entando.entando.aps.system.services.tenant.ITenantManager;
+import org.entando.entando.aps.system.services.tenant.cache.ITenantManagerCacheWrapper;
 import org.springframework.cache.Cache;
 
 import org.springframework.cache.transaction.AbstractTransactionSupportingCacheManager;
@@ -262,6 +263,9 @@ public class LettuceCacheManager extends AbstractTransactionSupportingCacheManag
 
     @Override
     public Cache getCache(String name) {
+        if (ITenantManagerCacheWrapper.TENANT_MANAGER_CACHE_NAME.equalsIgnoreCase(name)) {
+            return super.getCache(name);
+        }
         String tenantCode = (String) EntThreadLocal.get(ITenantManager.THREAD_LOCAL_TENANT_CODE);
         String prefix = (null != tenantCode) ? tenantCode + "_" : "";
         return super.getCache(prefix + name);
